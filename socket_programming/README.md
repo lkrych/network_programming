@@ -1,3 +1,9 @@
+# Socket Programming
+
+### Client-Server implementations
+
+*implemented in tcp/udp folders*
+
 Simple client-server implementations done in conjunction with reading Computer Networking from the top down (Kurose and Ross)
 
 All implementations were modified to use Python 3.7
@@ -6,3 +12,17 @@ All implementations were modified to use Python 3.7
 2. The server will receive the data and convert the characters to uppercase
 3. the server sends the modified data back to the client
 4. The client receives the modified data and display the lines on its screen
+
+
+### Web Server implementation
+
+*implemented in web_server folder*
+
+1. Implementation creates a connection socket when contacted by a client (browser)
+2. server receives the HTTP request from this connection
+3. server parses the request to determine which file is being requested
+4. server gets the requested file from the system
+5. creates an HTTP message consisting of the requested file preceded by headers
+6. sends the response over the TCP connection to the browser
+
+If the file requested cannot be found, the server should send a 404 Not Found message
