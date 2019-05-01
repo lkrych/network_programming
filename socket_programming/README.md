@@ -26,3 +26,13 @@ All implementations were modified to use Python 3.7
 6. sends the response over the TCP connection to the browser
 
 If the file requested cannot be found, the server should send a 404 Not Found message
+
+### UDP Pinger
+
+*implemented in udp_ping folder*
+
+Client will send a simple ping message to a server, receiving a corresponding pong message back from the server, and determine the delay between when the client sent the ping message and received the pong message. This delay is called the Round Trip Time (RTT). The functionality provided by the client and server is similar to the functionality provided by the standard ping program availiable in most operating systems. However standard ping programs use the Internet Control Message Protocol (ICMP), instead of UDP.
+
+1. Client sends 10 ping messages to the target server over UDP
+2. For each message, the client determines and prints the RTT when the corresponding Pong message is returned. 
+3. The client will wait for one second, if no reply is received, the client should assume the packet is lost and print a message.
