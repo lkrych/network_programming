@@ -36,3 +36,16 @@ Client will send a simple ping message to a server, receiving a corresponding po
 1. Client sends 10 ping messages to the target server over UDP
 2. For each message, the client determines and prints the RTT when the corresponding Pong message is returned. 
 3. The client will wait for one second, if no reply is received, the client should assume the packet is lost and print a message.
+
+### Mail Client
+
+*implemented in mail_client folder* (are you catching the pattern yet?)
+
+The goal of this programming assignment is to create a simple mail client that sends email to any recipient.
+
+The client will need to:
+
+1. Establish a TCP connection with a mail server.
+2. Dialogue with the mail server using the SMTP protocol.
+3. Send an email message to a recipient via the mail server
+4. Close the mail server
