@@ -22,8 +22,6 @@ s = smtplib.SMTP('smtp.gmail.com', 587)
   
 # start TLS for security 
 s.starttls()
-
-print(os.environ.get("GMAIL"))
   
 # Authentication 
 s.login(os.environ["GMAIL"], os.environ["GMAIL_SECRET"]) 
