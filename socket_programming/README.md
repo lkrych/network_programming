@@ -57,3 +57,11 @@ Specifically this code allows for a message to be sent to GMAILs smtp server
 *implemented in the mail_server folder*
 
 The goal of this programming assignment is to show how to use the python standard library to create a mail server that recieves an email from a mail client. The mail server will print out the dialog between the two programs.
+
+### Web Proxy
+
+*implemented in the web_proxy folder*
+
+The goal of this assignment is to develop a Web proxy that intercepts traffic and redirects it to the proper 
+server. The proxy should also redirect the response from the server back to the client. This proxy should be 
+multi-threaded so that it will handle multiple requests at the same time. 
