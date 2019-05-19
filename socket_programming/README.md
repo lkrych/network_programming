@@ -49,3 +49,11 @@ The client will need to:
 2. Dialogue with the mail server using the SMTP protocol.
 3. Send an email message to a recipient via the mail server
 4. Close the mail server
+
+Specifically this code allows for a message to be sent to GMAILs smtp server
+
+### Mail Server
+
+*implemented in the mail_server folder*
+
+The goal of this programming assignment is to show how to use the python standard library to create a mail server that recieves an email from a mail client. The mail server will print out the dialog between the two programs.
