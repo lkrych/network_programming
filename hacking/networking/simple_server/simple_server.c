@@ -8,6 +8,8 @@
 
 #define PORT 7890 // the port users will connect to
 
+void fatal(char *); //a function for fatal errors see below
+
 int main(void) {
     int sockfd, new_sockfd; // listen on sock_fd, new connection on new_fd
     struct sockaddr_in host_addr, client_addr; // Address information
@@ -44,7 +46,42 @@ int main(void) {
         fatal("binding to socket");
     }
 
+    // tells the socket to listen for incoming connections
+    // places all incoming connections into a backlog queue until an
+    // accept call accepts the connections
+    // 5 is the max size of the backlog queue
     if (listen(sockfd, 5) == -1) {
         fatal("listening on socket");
     }
+
+    while(1) { // Accept loop
+        sin_size = sizeof(struct sockaddr_in);
+        // the accept function returns a new socket file descriptor for the
+        // accepted connection. This way, the original socket file descriptor
+        // can be used for accepting new connections
+        new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+        if (new_sockfd == -1) {
+            fatal("accepting connection");
+        }
+        printf("Server: got connection from %s port %d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        send(new_sockfd, "Hello, world!\n", 13, 0);
+        recv_length = recv(new_sockfd, &buffer, 1024, 0);
+        while(recv_length > 0) {
+            printf("RECV: %d bytes\n", recv_length);
+            dump(buffer, recv_length);
+            recv_length = recv(new_sockfd, &buffer, 1024, 0);
+        }
+        close(new_sockfd);
+    }
+    return 0;
+}
+
+// a function to display an error message and then exit
+void fatal(char *message) {
+    char error_message[100];
+
+    strcpy(error_message, "[!!] Fatal Error ");
+    strncat(error_message, message, 83);
+    perror(error_message);
+    exit(-1);
 }
