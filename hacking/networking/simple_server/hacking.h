@@ -24,3 +24,29 @@ void dump (const unsigned char *data_buffer, const unsigned int length) {
         }
     }
 }
+
+// you may notice that every packet that is received ends with
+//  the bytes OxOD and OxOA. This is how telnet terminates the lines
+// It sends a carraige return and a newline character. The HTTP protocol
+// also expects these two bytes
+
+//server output
+
+// Server: got connection from 127.0.0.1 port 58454
+// RECV: 2 bytes
+// 0d 0a               | ..
+// RECV: 22 bytes
+// 48 65 6c 6c 6f 20 53 69 6d 70 6c 65 20 53 65 72 | Hello Simple Ser
+// 76 65 72 21 0d 0a           | ver!..
+
+//telnet output
+
+// telnet 127.0.0.1 7890 <- Simple server
+// Trying 127.0.0.1...
+// Connected to localhost.
+// Escape character is '^]'.
+// Hello, world!
+// Hello Simple Server!
+// ^C^C^]
+// telnet> quit
+// Connection closed.
