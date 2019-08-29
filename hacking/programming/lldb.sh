@@ -44,7 +44,7 @@ lldb simple
 #         fs = 0x0000000000000000
 #         gs = 0x0000000000000000
 
-# RAX, ECX, EDX, EBX -> General-purpose registers: Accumulator, Counter, Data, Base
+# RAX, RCX, RDX, RBX -> General-purpose registers: Accumulator, Counter, Data, Base
 # these registers act as temporary variables for the CPU when it is executing machine instructions
 
 # RSP, RBP, RSI, RDI -> General-purpose registers, but known as Pointers and Indexes. The first two are known
@@ -83,7 +83,6 @@ lldb simple
 # compile with the g flag to give access to lldb
 
 # lkrych@LKRYCH-M-W49D ~/blahblahblahblah (master) $ gcc -g simpleprog.c
-# lkrych@LKRYCH-M-W49D ~/blahblahblahblah (master) $ gdb ./a.outbash: gdb: command not found
 # lkrych@LKRYCH-M-W49D ~/blahblahblahblah (master) $ lldb ./a.out
 # (lldb) target create "./a.out"
 # Current executable set to './a.out' (x86_64).
