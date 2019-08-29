@@ -61,3 +61,24 @@ int main() {
 
 // compile with -g flag to include extra debugging information and give lldb
 // access to the source code
+
+//output created with: disassemble --name main in lldb
+
+// a.out[0x100000f40] <+0>:  push   rbp
+// a.out[0x100000f41] <+1>:  mov    rbp, rsp
+// a.out[0x100000f44] <+4>:  sub    rsp, 0x10
+// a.out[0x100000f48] <+8>:  mov    dword ptr [rbp - 0x4], 0x0
+// a.out[0x100000f4f] <+15>: mov    dword ptr [rbp - 0x8], 0x0
+// a.out[0x100000f56] <+22>: cmp    dword ptr [rbp - 0x8], 0xa #check if i > 10
+// a.out[0x100000f5a] <+26>: jge    0x100000f7d               ; <+61> at simpleprog.c #jump if it is
+// a.out[0x100000f60] <+32>: lea    rdi, [rip + 0x3f]         ; "Hello, world!\n"     #otherwise print hello world
+// a.out[0x100000f67] <+39>: call   0x100000f86               ; symbol stub for: puts #ditto above
+// a.out[0x100000f6c] <+44>: mov    dword ptr [rbp - 0xc], eax 
+// a.out[0x100000f6f] <+47>: mov    eax, dword ptr [rbp - 0x8] #increment i by 1
+// a.out[0x100000f72] <+50>: add    eax, 0x1                   #increment i by 1
+// a.out[0x100000f75] <+53>: mov    dword ptr [rbp - 0x8], eax #increment i by 1
+// a.out[0x100000f78] <+56>: jmp    0x100000f56               ; <+22> at simpleprog.c:5:19 #go back to beginning of loop
+// a.out[0x100000f7d] <+61>: xor    eax, eax
+// a.out[0x100000f7f] <+63>: add    rsp, 0x10
+// a.out[0x100000f83] <+67>: pop    rbp
+// a.out[0x100000f84] <+68>: ret   
