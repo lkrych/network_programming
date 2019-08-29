@@ -58,3 +58,6 @@ int main() {
 // 100000f83:	5d 	pop	rbp
 // 100000f84:	c3 	ret
 // Disassembly of section __TEXT,__stubs:
+
+// compile with -g flag to include extra debugging information and give lldb
+// access to the source code
