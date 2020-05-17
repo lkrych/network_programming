@@ -19,6 +19,9 @@
     * [getaddrinfo()](#getaddrinfo())
     * [socket()](#socket())
     * [bind()](#bind())
+    * [connect()](#connect())
+    * [listen()](#listen())
+    * [accept()](#accept())
 
 ## What is a socket?
 
@@ -222,6 +225,8 @@ When you call one of these functions, the kernel takes over and does all the wor
 
 The place where most people get stuck is around what order to call these things in. 
 
+<img src='resources/server-client-system-calls'>
+
 ### getaddrinfo()
 
 This is a workhorse of a function. *It helps to set up structs you need later on.*
@@ -284,4 +289,118 @@ s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
 ### bind()
 
-Once you have a socket you might have to associate that socket with a port on your local machine.
+Once you have a socket you might have to associate that socket with a port on your local machine. This is commonly done if you're going to `listen()` for incoming connections on a specific port.
+
+The port number is used by the kernel to match an incoming packet to a certain process's socket descriptor. 
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int bind(int sockfd, struct sockaddr *my_addr, int addrlen);
+```
+1. sockfd - the file descriptor returned by `socket()`.
+2. myaddr - a pointer to the struct that contains information about your address, namely, port and IP address.
+3. addrlen - the length in bytes of the address
+
+```c
+struct addrinfo hints, *res;
+int sockfd;
+// first, load up address structs with getaddrinfo():
+memset(&hints, 0, sizeof hints);
+hints.ai_family = AF_UNSPEC; // use IPv4 or IPv6, whichever hints.ai_socktype = SOCK_STREAM;
+hints.ai_flags = AI_PASSIVE; // fill in my IP for me
+getaddrinfo(NULL, "3490", &hints, &res);
+// make a socket:
+sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol); // bind it to the port we passed in to getaddrinfo():
+bind(sockfd, res->ai_addr, res->ai_addrlen);
+```
+
+By using the `AI_PASSIVE` flag, we're telling the program to bind to the IP of the host it's running on. If you want to bind to a specific IP address, drop the flag and put an IP address into the first argument of `getaddrinfo()`.
+
+### connect()
+
+The connect function helps you connect to a remote host.
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int connexct(int sockfd, struct sockaddr *serv_addr, int addrlen);
+```
+1. sockfd - the file descriptor returned by the `socket()` call.
+2. serv_addr - a pointer to the sockaddr struct that contains the destination port and IP address of the remote host.
+3. addrlen - the length in bytes of the server address structure
+
+All of this information can be grabbed from the results of `getaddrinfo()`.
+
+Here is some example code of making a socket connection to "www.example.com" on port 3490.
+
+```c
+struct addrinfo hints, *res;
+int sockfd;
+// first, load up address structs with getaddrinfo():
+memset(&hints, 0, sizeof hints); hints.ai_family = AF_UNSPEC; hints.ai_socktype = SOCK_STREAM;
+getaddrinfo("www.example.com", "3490", &hints, &res);
+// make a socket:
+sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+// connect!
+connect(sockfd, res->ai_addr, res->ai_addrlen);
+```
+
+Be sure to check the return value from `connect()`, it'll return -1 on error and set the variable `errno`. Also note that we didn't call `bind()`. Basically we don't care about our local port number, only where we are going. *The kernel will choose a port for us.* 
+
+### listen()
+
+The listen call allows the code to sit and wait for incoming connections on a socket. There is a two-step process, you need to `listen()` and `accept()`.
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int listen(int sockfd, int backlog);
+```
+1. sockfd - the usual file descriptor
+2. backlog - the number of connections allowed on the incoming queue. Incoming connections are going to wait in this queue until you `accept()` them. Most systems silently limit this number to 20.
+
+### accept()
+
+Alright, it's going to get a little weird here. In the `accept()` call someone from far away is trying to `connect()` to your machine on a part that you are `listen()`ing ong. Their connection will be queued up waiting to be `accept()`ed.
+
+`accept()` **will return to you a brand new socket file descriptor** for this single connection. That's right, suddenly we have two socket file descriptors. The original one is still listening for more new connections, and the newly created one is finally ready to `send()` and `recv()`.
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+```
+1. sockfd - the `listen()`ing socket descriptor.
+2. addr - a pointer to a local struct where the information about the incoming connection will go.
+3. addrlen - a local integer variable that should be set to the `sizeof(struct sockaddr_storage)` before its address is passed to `accept()`. `accept()` will not put more than that many bytes into addr.
+
+```c
+#include <string.h> #include <sys/types.h> #include <sys/socket.h> #include <netinet/in.h>
+#define MYPORT "3490"  // the port users will be connecting to
+#define BACKLOG 10     // how many pending connections queue will hold
+int main(void)
+{
+struct sockaddr_storage their_addr; socklen_t addr_size;
+struct addrinfo hints, *res;
+int sockfd, new_fd;
+    // !! don't forget your error checking for these calls !!
+    // first, load up address structs with getaddrinfo():
+memset(&hints, 0, sizeof hints);
+hints.ai_family = AF_UNSPEC; // use IPv4 or IPv6, whichever hints.ai_socktype = SOCK_STREAM;
+hints.ai_flags = AI_PASSIVE; // fill in my IP for me
+    getaddrinfo(NULL, MYPORT, &hints, &res);
+    // make a socket, bind it, and listen on it:
+sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol); bind(sockfd, res->ai_addr, res->ai_addrlen);
+listen(sockfd, BACKLOG);
+    // now accept an incoming connection:
+addr_size = sizeof their_addr;
+new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
+// ready to communicate on socket descriptor new_fd! .
+```
+
+## send() and recv()
