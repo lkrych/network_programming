@@ -16,6 +16,9 @@
         * [sockaddr_in](#sockaddr_in)
     * [IP address helper functions](#ip-addresses-and-helper-functions)
 * [System Calls](#system-calls)
+    * [getaddrinfo()](#getaddrinfo())
+    * [socket()](#socket())
+    * [bind()](#bind())
 
 ## What is a socket?
 
@@ -212,3 +215,63 @@ A quick word about **private networks**. The details of which private network nu
 IPv6 networks have private nteworks too, they'll start with `fdxx:`
 
 ## System Calls
+
+In this section we talk about system calls (and other library calls) that allow you to access the network functionality of a Unix box, or any other box that supports the sockets API. 
+
+When you call one of these functions, the kernel takes over and does all the work for you automagically. 
+
+The place where most people get stuck is around what order to call these things in. 
+
+### getaddrinfo()
+
+This is a workhorse of a function. *It helps to set up structs you need later on.*
+It does all sorts of ice things for you including DNS and service name lookups and fills out the structs you need. 
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+int getaddrinfo(const char *node        //"www.example.com" or IP
+                const char *service     // "http" or port number
+                const struct addrinfo *hints,
+                struct addrinfo **res);
+```
+
+You gives this function three input parameters and it gives you a pointer to a linked list, `res`, of results.
+1. node - is the host name to connect to, or an IP address.
+2. service - can be a port number, or the name of a particular service like 'http' or 'ftp'. 
+3. hints - points to a struct addrinfo that you've already filled out with relevant information.
+
+`freeaddrinfo()` is used to free up the getaddrinfo linked list allocated for us. 
+
+### socket()
+
+The socket system call returns the file descriptor. 
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int socket(int domain, int type, int protocol);
+```
+
+1. domain - what kind of socket you want (IPv4 of IPv6).
+2. type - stream or datagram.
+3. protocol - UDP or TCP.
+
+It returns a socket descriptor that you can use in later system calls, or -1 on error.
+
+```c
+int s;
+struct addrinfo hints, *res;
+// do the lookup
+// [pretend we already filled out the "hints" struct] getaddrinfo("www.example.com", "http", &hints, &res);
+
+// [again, you should do error-checking on getaddrinfo(), and walk // the "res" linked list looking for valid entries instead of just // assuming the first one is good (like many of these examples do.) // See the section on client/server for real examples.]
+s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+```
+
+### bind()
+
+Once you have a socket you might have to associate that socket with a port on your local machine.
