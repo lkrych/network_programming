@@ -1,7 +1,21 @@
 # Beej's guide to socket programming
 
 ## Table of Contents
-
+* [What is a socket](#what-is-a-socket?)
+    * [How do I use a socket](#how-do-i-use-a-socket?)
+    * [Types of Internet Sockets](
+        #types-of-internet-sockets)
+* [IP Addresses and Structs](#ip-addresses-structs-and-data-organization)
+    * [IPv4 and IPv6 address review](#ipv4-and-ipv6-addresses)
+    * [Subnets](#subnets)
+    * [Port Numbers](#port-numbers)
+    * [Byte Order](#byte-order)
+    * [Structs](#structs)
+        * [addrinfo](#addrinfo)
+        * [sockaddr](#sockaddr)
+        * [sockaddr_in](#sockaddr_in)
+    * [IP address helper functions](#ip-addresses-and-helper-functions)
+* [System Calls](#system-calls)
 
 ## What is a socket?
 
@@ -36,6 +50,8 @@ Packets that are sent across networks have to be **encapsulated**. To route acro
 The nice thing about socket programming is that you don't really need to care about how all of this lower-level stuff is done because programs on lower level deal with it for you!
 
 ## IP Addresses, Structs and Data organization
+
+### IPv4 and IPv6 addresses
 
 IPv4 Addresses are made up of four bytes and are commonly written in dots and numbers form likes so: `192.0.2.111`
 
@@ -97,6 +113,8 @@ Yay, it's time to start talking about programming.
 
 Socket descriptors are of type `int`. Things get weird after this. Thanks for the simple descriptor interface though!
 
+#### addrinfo
+
 The first struct we will talk about is `struct addrinfo`. This struct is used to prep the socket address structures for subsequent use. It's also used for host name lookups and service name lookups. 
 
 This is one of the first things you'll call when making a connection.
@@ -108,7 +126,7 @@ struct addrinfo {
     int                 ai_socktype;
     int                 ai_protocol;    // use 0 for "any"
     size_t              ai_addrlen;     // size of ai_addr in bytes
-    struct sockaddr     *ai_addr;       // struct sockarrd_in
+    struct sockaddr     *ai_addr;       // struct sockaddr_in
     char                *ai_canonname;  // full canonical hostname
 
     struct addrinfo     *ai_next;       // linked list, next node
@@ -117,6 +135,8 @@ struct addrinfo {
 You will load this struct up a bit, and then call `getaddrinfo()`. It'll return a pointer to anew linked list of these structures filled out with everything you need.
 
 The ai_family field is used to specify IPv4 or IPv6. 
+
+#### sockaddr
 
 The `struct sockaddr` holds socket address information for many types of sockets. 
 
@@ -131,6 +151,8 @@ struct sockaddr {
 * `sa_data` contains a destination address and port number for the socket. This is rather unwieldy since you don't want to pack the address by hand. To deal with `struct sockaddr`, programmers created a parallel structure: struct `sockaddr_in` ("in" for Internet) to be used with IPv4. 
 
 A pointer to `struct sockaddr_in` can be cast to a pointer to a `struct sockaddr` and vice-versa. This means you can use a `struct sockaddr_in` in the call to `connect()`.
+
+#### sockaddr_in
 
 ```c
 // This is for IPv4 only, see struct sockaddr_in6 for IPv6
@@ -151,3 +173,42 @@ struct in_addr {
 }
 ```
 
+Last, but not least, there is a simple structure, `struct sockaddr_storage` that is designed to be large enough to hold both IPv4 and IPv6 structures.
+
+### IP Addresses and Helper Functions
+
+Let's say you have a `struct sockaddr_in`, let's call it `ina`. We have an IP addresses `10.12.110.57` and `2001:db8:63b3:1::3490` and we want to store into the struct. 
+
+The function `inet_pton()` (presentation to network) converts an IP address in numbers-and-dots notation into either a `struct in_addr` or `struct in_6addr` depending on the family.
+
+```c
+struct sockaddr_in sa;   //IPv4
+struct sockaddr_in6 sa6; //IPv6
+
+inet_pton(AF_INET, "10.12.110.57", &(sa.sin_addr));
+inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr));
+```
+
+Okay, now we can convert string IP addresses into their binary representations, what about the other way around? The function we want to use is `inet_ntop()` (network to presentation).
+
+```c
+//IPv4:
+
+char ip4[INET_ADDRSTRLEN]; // space to hold the IPv4 string
+struct sockaddr_in sa;
+
+inet_ntop(AF_INET, &(sa.sin_addr), ip4, INET_ADDRSTRLEN);
+
+printf("The IPv4 address is: %s\n" ip4);
+
+// IPv6:
+char ip6[INET6_ADDRSTRLEN]; // space to hold the IPv6 string
+struct sockaddr_in6 sa6; // pretend this is loaded with something
+inet_ntop(AF_INET6, &(sa6.sin6_addr), ip6, INET6_ADDRSTRLEN); printf("The address is: %s\n", ip6);
+```
+
+A quick word about **private networks**. The details of which private network numbers are available to you are outlined in RFC1918, but some common ones you'll see for IPv4 are `10.x.x.x` and `192.168.x.x`. Less commonly you will see `172.y.x.x` where y goes between 16 and 31.
+
+IPv6 networks have private nteworks too, they'll start with `fdxx:`
+
+## System Calls
