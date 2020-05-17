@@ -3,7 +3,7 @@
 ## Table of Contents
 
 
-### What is a socket?
+## What is a socket?
 
 A **socket** is a way to speak to other programs using standard *Unix file descriptors*. 
 
@@ -29,6 +29,125 @@ Both socket types use IP for routing.
 
 ### Going Deeper 
 
+<img src="resources/encapsulation.png">
+
 Packets that are sent across networks have to be **encapsulated**. To route across the network they need to use IP, to move from computer to computer they need to be encapsulated in a Data Link packet, and they need to be physically transmitted across a wire or through glass. 
 
 The nice thing about socket programming is that you don't really need to care about how all of this lower-level stuff is done because programs on lower level deal with it for you!
+
+## IP Addresses, Structs and Data organization
+
+IPv4 Addresses are made up of four bytes and are commonly written in dots and numbers form likes so: `192.0.2.111`
+
+IPv6 addresses uses hexadecimal representation, with each two-byte chunk separated by a colon like this: `200:0db8:c9d2:aee5:73e3:934a:a5ae:9551`.
+
+Lot's of times you'll have an IP address with lots of zeros in it. You can compress an IPv6 address segment with all zeros to just two colons. You can also leave off leading zeros for each byte pair. 
+
+```bash
+#compressing zeros
+2001:0db8:c9d2:0012:0000:0000:0000:0051
+2001:db8:c9d2:12::51
+
+## removing leading zeros
+2001:0db8:ab00:0000:0000:0000:0000:0000
+2001:db8:ab00::
+
+#localhost
+0000:0000:0000:0000:0000:0000:0000:0001
+::1
+```
+
+The address `::1` is the **loopback address**. It always means "this machine I'm running on now". In IPv4 the loopback address is `127.0.0.1`.
+
+### Subnets
+
+For organizations reasons, it's sometimes convenient to declare that "this first part of the IP address up through this bit is the **network portion** of the IP address, and the remainder is the **host portion**".
+
+For instance, with IPv4, you might have `192.0.2.12`, and we could say that the first three bytes are the network and the last byte was the host. To put it another way, we're talking about host 12 on network `192.0.2.0`.
+
+The network portion of the IP address is described by something called the **netmask**, which you can **bitwise AND with the IP address** to get the network number out of it. The netmask is allowed to be an arbitrary number of bits. The netmask is always a bunch of 1-bits followed by a bunch of 0-bits. 
+
+It's a bit unwieldy to to use a big string of numbers as a netmask. You just put a slash after the IP address, and then follow that by the number of network bits in decimal : `192.0.2.12/30`.
+
+### Port Numbers
+
+Aside from an IP address, there is another address that is used by TCP and UDP sockets. It is the **port number**. It's a 16-bit number that's like the local address for the connection.
+
+You can think of the IP address as the street address for a hotel, and the port number as the room number.
+
+### Byte Order
+
+Most people generally agree that if you want to represent the two-byte hex number `b34f`, you'll store it in two sequential bytes: `b3` and `4f`. This number, stored with the big end first, is called **Big-Endian**. 
+
+Unfortunately, some computers, namely anything with an Intel or Intel-compatible processor, stores the bytes reversed, so `b34f` would be stored in memory as `4f` followed by `b3`. This is called **Little-Endian**. 
+
+**Big-Endian** is also called **Network Byte Order**. Because that's what networks like. 
+
+A lot of the times when you're building packets or filling out data structures, you'll need to make sure your numbers are in Network Byte Order. 
+
+There are two types of numbers you can convert, **short** (2-byte) and **long** (4-byte). To convert a short from Host Byte Order to Network Byte Order, you use the `htons()` function.
+1. `htons()` - host to network short
+2. `htonl()` - host to network long
+3. `ntohs()` - network to host short
+4. `ntohl()` - network to host short
+
+### Structs
+
+Yay, it's time to start talking about programming. 
+
+Socket descriptors are of type `int`. Things get weird after this. Thanks for the simple descriptor interface though!
+
+The first struct we will talk about is `struct addrinfo`. This struct is used to prep the socket address structures for subsequent use. It's also used for host name lookups and service name lookups. 
+
+This is one of the first things you'll call when making a connection.
+
+```c
+struct addrinfo {
+    int                 ai_flags; 
+    int                 ai_family;
+    int                 ai_socktype;
+    int                 ai_protocol;    // use 0 for "any"
+    size_t              ai_addrlen;     // size of ai_addr in bytes
+    struct sockaddr     *ai_addr;       // struct sockarrd_in
+    char                *ai_canonname;  // full canonical hostname
+
+    struct addrinfo     *ai_next;       // linked list, next node
+}
+```
+You will load this struct up a bit, and then call `getaddrinfo()`. It'll return a pointer to anew linked list of these structures filled out with everything you need.
+
+The ai_family field is used to specify IPv4 or IPv6. 
+
+The `struct sockaddr` holds socket address information for many types of sockets. 
+
+```c
+struct sockaddr {
+    unsigned short          sa_family;          // address family, AF_xxx
+    char                    sa_data[14];        // 14 bytes of protocol address
+}
+```
+
+* `sa_family` can be a variety of things, but it will be `AF_INET` (IPv4) or `AF_INET` (IPV6) in this guide.
+* `sa_data` contains a destination address and port number for the socket. This is rather unwieldy since you don't want to pack the address by hand. To deal with `struct sockaddr`, programmers created a parallel structure: struct `sockaddr_in` ("in" for Internet) to be used with IPv4. 
+
+A pointer to `struct sockaddr_in` can be cast to a pointer to a `struct sockaddr` and vice-versa. This means you can use a `struct sockaddr_in` in the call to `connect()`.
+
+```c
+// This is for IPv4 only, see struct sockaddr_in6 for IPv6
+
+struct sockaddr_in {
+    short int                   sin_family;         // Address family, AF_INET
+    unsigned short int          sin_port;           // Port number
+    struct in_addr              sin_addr;           // Internet address
+    unsigned char               sin_zero[8];         Sam size as struct sock_addr
+}
+```
+
+This structure makes it easy to reference elements of the socket address. sin_Zero is included to to pad the structure to the length of struct sockaddr. It should be set to all zeros with the function `memset()`. `sin_port` must be in Network Byte Order!
+
+```c
+struct in_addr {
+    uint32_t s_addr; // a 32-bit int (4 bytes)
+}
+```
+
