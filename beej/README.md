@@ -22,7 +22,9 @@
     * [connect()](#connect())
     * [listen()](#listen())
     * [accept()](#accept())
-
+    * [send() and recv()](#send()-and-recv())
+    * [sendto() and recvfrom()](#sendto()-and-recvfrom())
+    * [close() and shutdown()](#close()-and-shutdown())
 ## What is a socket?
 
 A **socket** is a way to speak to other programs using standard *Unix file descriptors*. 
@@ -404,3 +406,83 @@ new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &addr_size);
 ```
 
 ## send() and recv()
+
+These two functions are for communicating over stream sockets or connected datagram sockets. If you want to use regular unconnected datagram sockets, you'll need to use `sendto()` and `recvfrom()`.
+
+```c
+int send(int sockfd, const void *msg, int len, int flags);
+```
+1. sockfd - the file descriptor you want to send data to.
+2. msg - a pointer to the data you want to send.
+3. len - the length of the data you want to send in bytes.
+4. flags - just set this to zero :p.
+
+```c
+char *msg = "Beej was here!"; int len, bytes_sent;
+
+len = strlen(msg);
+bytes_sent = send(sockfd, msg, len, 0);
+```
+`send()`returns the number of bytes actually sent out. Remember, if the value returned by `send()` doesn't match the value in `len`, it's up to you to send the rest of the string.
+
+```c
+int recv(int sockfd, void *buf, int len, int flags);
+```
+1. sockfd - the file descriptor you want to read data from.
+2. buf - the buffer to read the information into.
+3. len - the maximum length of the buffer.
+4. flags - just set this to zero :p.
+
+`recv()` returns the number of bytes read into the buffer. `recv()` can also **return 0**, this means that the remote side has closed the connection on you. 
+
+### sendto() and recvfrom()
+
+Since datagram sockets aren't connected to a remote host, you need to add the destination address to call the function.
+
+```c
+int sendto(int sockfd, const void *msg, int len, unsigned int flags, const struct sockaddr *to, socklen_t tolen);
+```
+1. sockfd - the file descriptor you want to send data to.
+2. msg - a pointer to the data you want to send.
+3. len - the length of the data you want to send in bytes.
+4. flags - just set this to zero :p.
+5. to - a pointer to a struct which contains the IP address and port you want to send to.
+6. tolen - the sizeof(*to).
+
+Just like `send()`, `sendto()` returns the amount of bytes actually sent. 
+
+```c
+ int recvfrom(int sockfd, void *buf, int len, unsigned int flags, struct sockaddr *from, int *fromlen);
+```
+1. sockfd - the file descriptor you want to send data to.
+2. buf - the buffer to read the information into.
+3. len - the maximum length of the buffer.
+4. flags - just set this to zero :p.
+5. from - a pointer to a local struct sockaddr_storage that will be filled with the IP address and port of the originating machine.
+6. fromlen - the sizeof(*from).
+
+`recvfrom()` returns the number of bytes received or -1 on error.
+
+# close() and shutdown()
+
+To close the connection you use the regular Unix file descriptor `close()`.
+
+```c
+close(int sockfd);
+```
+1. sockfd - the file descriptor you want to close.
+
+This will prevent any more reads and writes to the scoket. Anyone attempting to read or write to the socket on the remote end will receive an error.
+
+Just in case you want **a little more control over how the socket closes**, you can use the `shutdown()` function. It allows you to cut off communication in a certain direction, or both ways (just like close).
+
+```c
+int shutdown(int sockfd, int how);
+```
+1. sockfd - the socket file descriptor you want to shutdown.
+2. how - options. 
+    * 0 - Further receives are disallowed
+    * 1 - Further sends are disallowed
+    * 2 - Further sends and receives are disallowed
+
+It's important to note that `shutdown` doesn't actually close the file descriptor, you still need to use `close()` to do that.
