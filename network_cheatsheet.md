@@ -12,7 +12,14 @@ All commands were run on Mac OSx
     * [Configuration](network-interface-configuration)
     * [ Statistics](#network-interface-statistics)
 * Network Connections
-    *
+    * [Open Sockets](#open-sockets)
+    * [Open TCP Connections](#open-tcp-connections)
+    * [Listening Connections](#listening-connections)
+    * [Established Connections](#established-connections)
+    * [What application is listening?](#what-application-is-listening?)
+* [DNS](#dns)
+* [Tcpdump](#tcpdump)
+* [Netcat](#netcat)
 
 ### Ping
 
@@ -131,3 +138,72 @@ en0   1500  fe80::817:3 fe80:5::817:3e8b: 42570767     - 32390764     -     -
 en0   1500  192.168.1     192.168.1.75    42570767     - 32390764     -     -
 ...
 ```
+
+### Network Connections
+
+netstat is the best tool for monitoring network connections.
+
+### Open Sockets
+
+`netstat -a`
+
+### Open TCP Connections
+
+`netstat -na -p tcp`
+
+### Listening Connections
+`netstat -na -p tcp | grep LISTEN`
+
+### Established Connections
+
+`netstat -np tcp`
+
+### What application is listening?
+
+`lsof -n -i`
+
+lsof is a general purpose program for listing open files. Since unix treats network ports like files, this works for getting more info. 
+
+### DNS
+
+Use `dig` :).
+
+### tcpdump
+
+Sometimes you actually want to inspect the traffic being sent to and from your machine. `tcpdump` is a good tool for this. tcpdump uses the Berkeley Packet Filter syntax for filtering, this makes the tool really flexible.
+
+### ARP capture
+
+`tcpdump -i 1 arp`
+
+### IP capture
+
+`tcpdump -i 1 ip`
+
+### TCP capture
+
+`tcpdump -i 1 tcp port 80`
+
+### Capturing pcap files
+
+Use the `-w` flag with tcpdump
+
+`tcpdump -w web.pcap -ni tcp port 443`
+
+### Reading pcap files
+
+use the `-r` flag
+
+`tcpdump -r web.pcap`
+
+### netcat
+
+Sometimes you need to recreate an issue, or test setting up TCP connections or send UDP packets, `netcat` is a handy tool for this.
+
+### Establishing a tcp connection with netcat
+
+`nc -v localhost 80`
+
+### Sending UDP packets with netcat
+
+`nc -uv my.dns.server 53` 
